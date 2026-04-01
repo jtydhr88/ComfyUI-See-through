@@ -12,23 +12,58 @@ const { api } = window.comfyAPI.api;
 let agPsdLoaded = false;
 let agPsdLoadPromise = null;
 
+const _ownScriptDir = (() => {
+    const src = document.currentScript?.src;
+    if (src) return src.substring(0, src.lastIndexOf("/") + 1);
+    return null;
+})();
+
 async function ensureAgPsdLoaded() {
     if (agPsdLoaded) return;
     if (agPsdLoadPromise) return agPsdLoadPromise;
 
     agPsdLoadPromise = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = api.fileURL("/extensions/ComfyUI-See-through/ag-psd.bundle.js");
-        script.onload = () => {
-            agPsdLoaded = true;
-            console.log("[SeeThrough] ag-psd bundle loaded");
-            resolve();
-        };
-        script.onerror = (e) => {
-            console.error("[SeeThrough] Failed to load ag-psd bundle:", e);
-            reject(new Error("Failed to load ag-psd bundle"));
-        };
-        document.head.appendChild(script);
+        if (_ownScriptDir) {
+            const script = document.createElement("script");
+            script.src = _ownScriptDir + "ag-psd.bundle.js";
+            script.onload = () => {
+                agPsdLoaded = true;
+                console.log("[SeeThrough] ag-psd bundle loaded");
+                resolve();
+            };
+            script.onerror = (e) => {
+                console.error("[SeeThrough] Failed to load ag-psd bundle:", e);
+                reject(new Error("Failed to load ag-psd bundle"));
+            };
+            document.head.appendChild(script);
+        } else {
+            const variants = [
+                "ComfyUI-See-through",
+                "comfyui-see-through",
+                "ComfyUI-see-through",
+            ];
+            let idx = 0;
+            function tryNext() {
+                if (idx >= variants.length) {
+                    reject(new Error("Failed to load ag-psd bundle from any path"));
+                    return;
+                }
+                const s = document.createElement("script");
+                s.src = api.fileURL(`/extensions/${variants[idx]}/ag-psd.bundle.js`);
+                idx++;
+                s.onload = () => {
+                    agPsdLoaded = true;
+                    console.log(`[SeeThrough] ag-psd bundle loaded from: ${s.src}`);
+                    resolve();
+                };
+                s.onerror = () => {
+                    s.remove();
+                    tryNext();
+                };
+                document.head.appendChild(s);
+            }
+            tryNext();
+        }
     });
 
     return agPsdLoadPromise;
