@@ -3,7 +3,11 @@
  * Uses ag-psd to generate PSD files in the browser from decomposed layers.
  */
 
-import { app } from "../../scripts/app.js";
+// import { app } from "../../scripts/app.js";
+
+// const { api } = window.comfyAPI.api;
+const { app } = window.comfyAPI.app;
+const { api } = window.comfyAPI.api;
 
 let agPsdLoaded = false;
 let agPsdLoadPromise = null;
@@ -14,7 +18,7 @@ async function ensureAgPsdLoaded() {
 
     agPsdLoadPromise = new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = "./extensions/ComfyUI-See-through/ag-psd.bundle.js";
+        script.src = api.fileURL("/extensions/ComfyUI-See-through/ag-psd.bundle.js");
         script.onload = () => {
             agPsdLoaded = true;
             console.log("[SeeThrough] ag-psd bundle loaded");
@@ -62,7 +66,7 @@ async function createPSD(layerInfo, psdType) {
         const filename = layer[filenameKey];
         if (!filename) continue;
 
-        const url = `/view?filename=${encodeURIComponent(filename)}&type=output&t=${Date.now()}`;
+        const url = api.apiURL(`/view?filename=${encodeURIComponent(filename)}&type=output&t=${Date.now()}`);
         const img = await loadImage(url);
 
         const lw = layer.right - layer.left;
@@ -128,7 +132,7 @@ app.registerExtension({
                 try {
                     dlBtn.name = "Generating PSD...";
                     const logResp = await fetch(
-                        "/view?filename=seethrough_psd_info.log&type=output&t=" + Date.now()
+                        api.apiURL("/view?filename=seethrough_psd_info.log&type=output&t=" + Date.now())
                     );
                     if (!logResp.ok) {
                         alert("Please run the workflow first to generate layers.");
@@ -136,7 +140,7 @@ app.registerExtension({
                     }
                     const infoFilename = (await logResp.text()).trim();
                     const infoResp = await fetch(
-                        `/view?filename=${encodeURIComponent(infoFilename)}&type=output&t=${Date.now()}`
+                        api.apiURL(`/view?filename=${encodeURIComponent(infoFilename)}&type=output&t=${Date.now()}`)
                     );
                     if (!infoResp.ok) {
                         alert("Failed to load layer information.");
@@ -164,7 +168,7 @@ app.registerExtension({
                 try {
                     dlDepthBtn.name = "Generating Depth PSD...";
                     const logResp = await fetch(
-                        "/view?filename=seethrough_psd_info.log&type=output&t=" + Date.now()
+                        api.apiURL("/view?filename=seethrough_psd_info.log&type=output&t=" + Date.now())
                     );
                     if (!logResp.ok) {
                         alert("Please run the workflow first to generate layers.");
@@ -172,7 +176,7 @@ app.registerExtension({
                     }
                     const infoFilename = (await logResp.text()).trim();
                     const infoResp = await fetch(
-                        `/view?filename=${encodeURIComponent(infoFilename)}&type=output&t=${Date.now()}`
+                        api.apiURL(`/view?filename=${encodeURIComponent(infoFilename)}&type=output&t=${Date.now()}`)
                     );
                     if (!infoResp.ok) {
                         alert("Failed to load layer information.");
