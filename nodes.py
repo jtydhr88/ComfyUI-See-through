@@ -81,7 +81,7 @@ del _st_conflict_backup
 
 DEFAULT_LAYERDIFF_REPO = "layerdifforg/seethroughv0.0.2_layerdiff3d"
 DEFAULT_LAYERDIFF_NF4_REPO = "24yearsold/seethroughv0.0.2_layerdiff3d_nf4"
-DEFAULT_DEPTH_REPO = "24yearsold/seethroughv0.0.1_marigold"
+DEFAULT_DEPTH_REPO = "layerdifforg/seethroughv0.0.1_marigold"
 DEFAULT_DEPTH_NF4_REPO = "24yearsold/seethroughv0.0.1_marigold_nf4"
 
 QUANT_MODES = ["none", "nf4"]

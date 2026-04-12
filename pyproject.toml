@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-see-through"
 description = "ComfyUI nodes for See-through: Anime Layer Decomposition from a Single Image"
-version = "0.4.1"
+version = "0.4.2"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
