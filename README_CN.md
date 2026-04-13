@@ -32,7 +32,7 @@
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/dmMaze/ComfyUI-See-through.git
+git clone https://github.com/jtydhr88/ComfyUI-See-through.git
 ```
 
 安装依赖：
