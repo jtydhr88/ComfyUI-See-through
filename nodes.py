@@ -158,7 +158,15 @@ def _scan_model_dirs():
 
 def _resolve_model_path(model_name):
     local = os.path.join(SEETHROUGH_MODELS_DIR, model_name)
-    return local if os.path.isdir(local) else model_name
+    if os.path.isdir(local):
+        return local
+    # When model_name is an org/repo style ID (e.g. "layerdifforg/seethroughv0.0.1_marigold"),
+    # check if just the repo part exists locally (git clone creates dirs without the org prefix).
+    basename = model_name.split("/")[-1]
+    local_basename = os.path.join(SEETHROUGH_MODELS_DIR, basename)
+    if basename != model_name and os.path.isdir(local_basename):
+        return local_basename
+    return model_name
 
 
 def _label_lr_split(labels, stats, id1, id2):
