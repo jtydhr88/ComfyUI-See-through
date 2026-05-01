@@ -148,15 +148,30 @@ def seed_everything(seed):
 
 
 def _scan_model_dirs():
+    """Recursively find diffusers model dirs (containing model_index.json) up to 2 levels deep.
+    Returns relative paths from SEETHROUGH_MODELS_DIR (e.g. 'foo' or 'org/foo')."""
     found = []
-    if os.path.isdir(SEETHROUGH_MODELS_DIR):
-        for name in sorted(os.listdir(SEETHROUGH_MODELS_DIR)):
-            if os.path.isdir(os.path.join(SEETHROUGH_MODELS_DIR, name)):
-                found.append(name)
+    if not os.path.isdir(SEETHROUGH_MODELS_DIR):
+        return found
+    if os.path.isfile(os.path.join(SEETHROUGH_MODELS_DIR, "model_index.json")):
+        found.append(".")
+    for name in sorted(os.listdir(SEETHROUGH_MODELS_DIR)):
+        d1 = os.path.join(SEETHROUGH_MODELS_DIR, name)
+        if not os.path.isdir(d1):
+            continue
+        if os.path.isfile(os.path.join(d1, "model_index.json")):
+            found.append(name)
+            continue
+        for sub in sorted(os.listdir(d1)):
+            d2 = os.path.join(d1, sub)
+            if os.path.isdir(d2) and os.path.isfile(os.path.join(d2, "model_index.json")):
+                found.append(f"{name}/{sub}")
     return found
 
 
 def _resolve_model_path(model_name):
+    if model_name == ".":
+        return SEETHROUGH_MODELS_DIR
     local = os.path.join(SEETHROUGH_MODELS_DIR, model_name)
     if os.path.isdir(local):
         return local
@@ -294,6 +309,8 @@ class SeeThrough_LoadLayerDiffModel:
                                                   "tooltip": "Pre-compute and cache tag embeddings, then unload text encoders to save VRAM"}),
                 "group_offload": ("BOOLEAN", {"default": False,
                                                "tooltip": "Enable group offload to reduce peak VRAM (~10GB) at cost of ~1.5x slower speed"}),
+                "auto_download": ("BOOLEAN", {"default": True,
+                                               "tooltip": "If model is not found locally, download from HuggingFace. Disable to force local-only and error out instead of downloading."}),
             },
         }
 
@@ -302,7 +319,7 @@ class SeeThrough_LoadLayerDiffModel:
     FUNCTION = "load_model"
     CATEGORY = "SeeThrough"
 
-    def load_model(self, model, vae_ckpt="", unet_ckpt="", quant_mode="none", cache_tag_embeds=True, group_offload=False):
+    def load_model(self, model, vae_ckpt="", unet_ckpt="", quant_mode="none", cache_tag_embeds=True, group_offload=False, auto_download=True):
         use_nf4 = quant_mode == "nf4"
         dtype = torch.bfloat16
 
@@ -311,18 +328,21 @@ class SeeThrough_LoadLayerDiffModel:
             print(f"[SeeThrough] quant_mode=nf4: auto-switched to NF4 repo {model}", flush=True)
 
         pretrained = _resolve_model_path(model)
+        is_local = os.path.isdir(pretrained)
+        local_only = is_local or not auto_download
 
-        print(f"[SeeThrough] Loading LayerDiff model from: {pretrained} (quant_mode={quant_mode})", flush=True)
-        trans_vae = TransparentVAE.from_pretrained(pretrained, subfolder="trans_vae")
+        print(f"[SeeThrough] Loading LayerDiff model from: {pretrained} "
+              f"(quant_mode={quant_mode}, local={is_local}, local_files_only={local_only})", flush=True)
+        trans_vae = TransparentVAE.from_pretrained(pretrained, subfolder="trans_vae", local_files_only=local_only)
 
         if unet_ckpt:
             print(f"[SeeThrough] Loading custom UNet from: {unet_ckpt}", flush=True)
             unet = UNetFrameConditionModel.from_pretrained(unet_ckpt)
         else:
-            unet = UNetFrameConditionModel.from_pretrained(pretrained, subfolder="unet")
+            unet = UNetFrameConditionModel.from_pretrained(pretrained, subfolder="unet", local_files_only=local_only)
 
         pipeline = KDiffusionStableDiffusionXLPipeline.from_pretrained(
-            pretrained, trans_vae=trans_vae, unet=unet, scheduler=None)
+            pretrained, trans_vae=trans_vae, unet=unet, scheduler=None, local_files_only=local_only)
 
         if vae_ckpt:
             print(f"[SeeThrough] Loading custom VAE from: {vae_ckpt}", flush=True)
@@ -391,6 +411,8 @@ class SeeThrough_LoadDepthModel:
                                                   "tooltip": "Pre-compute empty text embedding and unload text encoder to save VRAM"}),
                 "group_offload": ("BOOLEAN", {"default": False,
                                                "tooltip": "Enable group offload to reduce peak VRAM at cost of slower speed"}),
+                "auto_download": ("BOOLEAN", {"default": True,
+                                               "tooltip": "If model is not found locally, download from HuggingFace. Disable to force local-only and error out instead of downloading."}),
             },
         }
 
@@ -399,7 +421,7 @@ class SeeThrough_LoadDepthModel:
     FUNCTION = "load_model"
     CATEGORY = "SeeThrough"
 
-    def load_model(self, model, quant_mode="none", cache_tag_embeds=True, group_offload=False):
+    def load_model(self, model, quant_mode="none", cache_tag_embeds=True, group_offload=False, auto_download=True):
         use_nf4 = quant_mode == "nf4"
         dtype = torch.bfloat16
 
@@ -408,10 +430,13 @@ class SeeThrough_LoadDepthModel:
             print(f"[SeeThrough] quant_mode=nf4: auto-switched to NF4 repo {model}", flush=True)
 
         pretrained = _resolve_model_path(model)
+        is_local = os.path.isdir(pretrained)
+        local_only = is_local or not auto_download
 
-        print(f"[SeeThrough] Loading Marigold depth model from: {pretrained} (quant_mode={quant_mode})", flush=True)
-        unet = UNetFrameConditionModel.from_pretrained(pretrained, subfolder="unet")
-        pipeline = MarigoldDepthPipeline.from_pretrained(pretrained, unet=unet)
+        print(f"[SeeThrough] Loading Marigold depth model from: {pretrained} "
+              f"(quant_mode={quant_mode}, local={is_local}, local_files_only={local_only})", flush=True)
+        unet = UNetFrameConditionModel.from_pretrained(pretrained, subfolder="unet", local_files_only=local_only)
+        pipeline = MarigoldDepthPipeline.from_pretrained(pretrained, unet=unet, local_files_only=local_only)
 
         if use_nf4:
             print("[SeeThrough] NF4 mode: casting non-quantized parameters to bf16", flush=True)

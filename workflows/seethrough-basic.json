@@ -1,8 +1,8 @@
 {
   "id": "seethrough-basic-workflow",
   "revision": 0,
-  "last_node_id": 27,
-  "last_link_id": 22,
+  "last_node_id": 29,
+  "last_link_id": 24,
   "nodes": [
     {
       "id": 20,
@@ -95,7 +95,7 @@
       ],
       "size": [
         225,
-        279.140625
+        279.125
       ],
       "flags": {},
       "order": 7,
@@ -136,7 +136,7 @@
         {
           "name": "depth_model",
           "type": "SEETHROUGH_DEPTH_MODEL",
-          "link": 20
+          "link": 24
         }
       ],
       "outputs": [
@@ -185,7 +185,7 @@
         {
           "name": "layerdiff_model",
           "type": "SEETHROUGH_LAYERDIFF_MODEL",
-          "link": 21
+          "link": 23
         }
       ],
       "outputs": [
@@ -213,74 +213,6 @@
       ]
     },
     {
-      "id": 25,
-      "type": "SeeThrough_LoadDepthModel",
-      "pos": [
-        -3389.9701923750113,
-        -630.2745792126645
-      ],
-      "size": [
-        305.5,
-        161.796875
-      ],
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "depth_model",
-          "type": "SEETHROUGH_DEPTH_MODEL",
-          "links": [
-            20
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SeeThrough_LoadDepthModel"
-      },
-      "widgets_values": [
-        "24yearsold/seethroughv0.0.1_marigold",
-        true,
-        false
-      ]
-    },
-    {
-      "id": 26,
-      "type": "SeeThrough_LoadLayerDiffModel",
-      "pos": [
-        -3855.531851446192,
-        -621.171389108498
-      ],
-      "size": [
-        325.9375,
-        233.796875
-      ],
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "layerdiff_model",
-          "type": "SEETHROUGH_LAYERDIFF_MODEL",
-          "links": [
-            21
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "SeeThrough_LoadLayerDiffModel"
-      },
-      "widgets_values": [
-        "layerdifforg/seethroughv0.0.2_layerdiff3d",
-        "",
-        "",
-        true,
-        false
-      ]
-    },
-    {
       "id": 27,
       "type": "LoadImage",
       "pos": [
@@ -292,7 +224,7 @@
         339.140625
       ],
       "flags": {},
-      "order": 2,
+      "order": 0,
       "mode": 0,
       "inputs": [],
       "outputs": [
@@ -315,6 +247,78 @@
       "widgets_values": [
         "(pid-66823055)想いをはせる妖夢ちゃん.jpeg",
         "image"
+      ]
+    },
+    {
+      "id": 28,
+      "type": "SeeThrough_LoadLayerDiffModel",
+      "pos": [
+        -3903.094547952365,
+        -608.1178765698241
+      ],
+      "size": [
+        325.9375,
+        296.453125
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "layerdiff_model",
+          "type": "SEETHROUGH_LAYERDIFF_MODEL",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SeeThrough_LoadLayerDiffModel"
+      },
+      "widgets_values": [
+        "layerdifforg/seethroughv0.0.2_layerdiff3d",
+        "",
+        "",
+        "none",
+        true,
+        false,
+        true
+      ]
+    },
+    {
+      "id": 29,
+      "type": "SeeThrough_LoadDepthModel",
+      "pos": [
+        -3396.2188071622145,
+        -609.4045195159131
+      ],
+      "size": [
+        305.5,
+        224.453125
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "depth_model",
+          "type": "SEETHROUGH_DEPTH_MODEL",
+          "links": [
+            24
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SeeThrough_LoadDepthModel"
+      },
+      "widgets_values": [
+        "layerdifforg/seethroughv0.0.1_marigold",
+        "none",
+        true,
+        false,
+        true
       ]
     }
   ],
@@ -352,41 +356,41 @@
       "SEETHROUGH_LAYERS"
     ],
     [
-      20,
-      25,
-      0,
-      23,
-      1,
-      "SEETHROUGH_DEPTH_MODEL"
-    ],
-    [
-      21,
-      26,
-      0,
-      24,
-      1,
-      "SEETHROUGH_LAYERDIFF_MODEL"
-    ],
-    [
       22,
       27,
       0,
       24,
       0,
       "IMAGE"
+    ],
+    [
+      23,
+      28,
+      0,
+      24,
+      1,
+      "SEETHROUGH_LAYERDIFF_MODEL"
+    ],
+    [
+      24,
+      29,
+      0,
+      23,
+      1,
+      "SEETHROUGH_DEPTH_MODEL"
     ]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.8928571428571428,
+      "scale": 0.7930537574400005,
       "offset": [
-        4086.700412122749,
-        1140.9838448734981
+        4335.678033510418,
+        1376.4690331258626
       ]
     },
-    "frontendVersion": "1.43.11",
+    "frontendVersion": "1.44.5",
     "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,

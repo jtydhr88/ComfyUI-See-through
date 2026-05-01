@@ -62,7 +62,25 @@ pip install -r requirements.txt
 | LayerDiff 3D | `layerdifforg/seethroughv0.0.2_layerdiff3d` | 基于 SDXL 的透明图层生成 |
 | Marigold Depth | `24yearsold/seethroughv0.0.1_marigold` | 动漫微调的单目深度估计 |
 
-也可手动下载模型放到 `ComfyUI/models/SeeThrough/` 目录。
+#### 手动放置模型
+
+也可以手动下载模型放到 `ComfyUI/models/SeeThrough/` 目录。加载器会递归扫描两层目录、自动识别所有含 `model_index.json` 的合法 diffusers 模型目录，以下任一布局都能被识别并出现在下拉框里：
+
+```
+ComfyUI/models/SeeThrough/
+├── model_index.json                                        # 文件直接放在顶层（单模型）
+├── seethroughv0.0.2_layerdiff3d/                           # 仅 repo 名子目录
+│   └── model_index.json
+└── layerdifforg/                                           # org/repo 子目录（与 HF 命名一致）
+    └── seethroughv0.0.2_layerdiff3d/
+        └── model_index.json
+```
+
+当加载器解析到本地路径后，会给所有 `from_pretrained` 调用传 `local_files_only=True`。也就是说一旦模型已就位，就不再访问 HuggingFace —— 即使上游 HF 仓库有新 commit，本地缓存也不会被反复重下。
+
+#### `auto_download` 开关
+
+**Load LayerDiff Model** 与 **Load Depth Model** 节点都新增了 `auto_download` 布尔参数（默认 `true`）。设为 `false` 时强制只走本地：本地若找不到模型，节点会直接报错而不会去联网下载。
 
 ## 使用方法
 
@@ -97,6 +115,7 @@ pip install -r requirements.txt
 | `tblr_split` | true | 是否将对称部位（眼睛、耳朵、手套）拆分为左/右 |
 | `cache_tag_embeds` | true | 预计算并缓存标签嵌入，然后卸载文本编码器以节省显存 |
 | `group_offload` | false | 启用分组卸载，大幅降低峰值显存（实际占用约 0.2GB，预留约 7GB），但速度**慢 2–3 倍**。需要 `diffusers>=0.37.0` |
+| `auto_download` | true | 本地找不到模型时自动从 HuggingFace 下载。关闭后强制只走本地，找不到直接报错 |
 | `resolution_depth` | -1 | 深度推理分辨率。-1 表示与图层相同。设低（如 720）可节省显存并加速深度估计 |
 
 ### 显存优化指南

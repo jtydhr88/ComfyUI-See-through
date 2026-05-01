@@ -62,7 +62,25 @@ Models are downloaded automatically from HuggingFace on first use:
 | LayerDiff 3D | `layerdifforg/seethroughv0.0.2_layerdiff3d` | SDXL-based transparent layer generation |
 | Marigold Depth | `24yearsold/seethroughv0.0.1_marigold` | Fine-tuned monocular depth for anime |
 
-Alternatively, download models manually and place them in `ComfyUI/models/SeeThrough/`.
+#### Manual placement
+
+You can also download models manually and place them under `ComfyUI/models/SeeThrough/`. The loader recursively scans for valid diffusers directories (those containing `model_index.json`) up to two levels deep, so all of the following layouts are recognized and shown in the model dropdown:
+
+```
+ComfyUI/models/SeeThrough/
+├── model_index.json                                        # flat layout (single model)
+├── seethroughv0.0.2_layerdiff3d/                           # repo-name subfolder
+│   └── model_index.json
+└── layerdifforg/                                           # org/repo subfolder (matches HF naming)
+    └── seethroughv0.0.2_layerdiff3d/
+        └── model_index.json
+```
+
+When the loader resolves a model to a local path, it sets `local_files_only=True` on every `from_pretrained` call. This means once the model is in place, no HuggingFace requests are made — even if the upstream repo gets a new commit, the cache will not be re-fetched.
+
+#### `auto_download` toggle
+
+Both **Load LayerDiff Model** and **Load Depth Model** expose an `auto_download` boolean (default `true`). Set it to `false` to force local-only loading: if the model is not found on disk, the node errors out instead of contacting HuggingFace.
 
 ## Usage
 
@@ -95,6 +113,7 @@ Drag any `.json` file into ComfyUI to load the workflow.
 | `tblr_split` | true | Split symmetric parts (eyes, ears, handwear) into left/right |
 | `cache_tag_embeds` | true | Pre-compute and cache tag embeddings, then unload text encoders to save VRAM |
 | `group_offload` | false | Enable group offload to drastically reduce peak VRAM (allocated ~0.2GB, reserved ~7GB) at cost of **2–3x slower** speed. Requires `diffusers>=0.37.0` |
+| `auto_download` | true | If the model is not found locally, download from HuggingFace. Disable to force local-only and error out instead of downloading |
 | `resolution_depth` | -1 | Resolution for depth inference. -1 uses the same as layers. Lower values (e.g. 720) save VRAM and speed up depth estimation |
 
 ### VRAM Optimization Guide
