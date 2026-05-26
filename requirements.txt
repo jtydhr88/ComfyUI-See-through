@@ -1,4 +1,5 @@
 diffusers>=0.25.0
+peft>=0.18.0
 accelerate>=0.20.0
 opencv-python>=4.0.0
 scikit-learn>=1.0.0
