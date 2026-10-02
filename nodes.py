@@ -232,6 +232,8 @@ def _process_cuts(img, depth, src_xyxy, tgt_bbox, mask=None):
         depth = 1 - (1 - depth) * mask
         if np.any(mask):
             depth_median = float(np.median(depth[mask > 0]))
+            if not np.isfinite(depth_median):  # depth maps can contain NaN for degenerate crops
+                depth_median = 1.0
     fxyxy = [tx1 + src_xyxy[0], ty1 + src_xyxy[1], tx2 + src_xyxy[0], ty2 + src_xyxy[1]]
     return img, depth, fxyxy, depth_median
 
@@ -258,12 +260,27 @@ def _tag_lr_split(tag, tag2pinfo):
         tag2pinfo.update(_part_lr_split(tag, tag2pinfo.pop(tag)))
 
 
+def _depth_sort_key(pinfo):
+    """Sort key for ``depth_median`` that stays comparable when it is NaN.
+
+    NaN comparisons are always False, which breaks ``list.sort()`` silently.
+    Non-finite depths are treated as farthest, same default as ``.get(...)``.
+    """
+    try:
+        value = float(pinfo.get("depth_median", 1.0))
+    except (TypeError, ValueError):
+        return 1.0
+    return value if np.isfinite(value) else 1.0
+
+
 def _compute_depth_median(part_dict):
     img = part_dict.pop("img")
     part_dict.pop("mask", None)
     depth = part_dict.pop("depth")
     mask = img[..., -1] > 10
     depth_median = float(np.median(depth[mask])) if np.any(mask) else 1.0
+    if not np.isfinite(depth_median):  # depth maps can contain NaN for degenerate crops
+        depth_median = 1.0
     nz = cv2.findNonZero(mask.astype(np.uint8))
     if nz is not None:
         xywh = cv2.boundingRect(nz)
@@ -846,7 +863,7 @@ class SeeThrough_PostProcess:
                 try:
                     inpaint_mode = "lama" if use_lama else "cv2"
                     parts = cluster_inpaint_part(inpaint=inpaint_mode, **part_info)
-                    parts.sort(key=lambda x: x["depth_median"])
+                    parts.sort(key=_depth_sort_key)
                     tag2pinfo["hairf"] = parts[0]
                     tag2pinfo["hairb"] = parts[1]
                 except Exception as e:
@@ -887,7 +904,7 @@ class SeeThrough_PostProcess:
         parts_data = {"tag2pinfo": tag2pinfo, "frame_size": frame_size}
 
         print(f"[SeeThrough] PostProcess complete: {len(tag2pinfo)} layers", flush=True)
-        for tag, pinfo in sorted(tag2pinfo.items(), key=lambda x: x[1].get("depth_median", 1)):
+        for tag, pinfo in sorted(tag2pinfo.items(), key=lambda x: _depth_sort_key(x[1])):
             dm = pinfo.get("depth_median", "?")
             print(f"  - {tag}: depth_median={dm:.4f}" if isinstance(dm, float) else f"  - {tag}", flush=True)
 
@@ -923,7 +940,7 @@ class SeeThrough_SavePSD:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         uid = str(uuid.uuid4())[:8]
 
-        sorted_tags = sorted(tag2pinfo.keys(), key=lambda t: tag2pinfo[t].get("depth_median", 1), reverse=True)
+        sorted_tags = sorted(tag2pinfo.keys(), key=lambda t: _depth_sort_key(tag2pinfo[t]), reverse=True)
 
         layer_info_list = []
         for tag in sorted_tags:
@@ -989,7 +1006,7 @@ class SeeThrough_PartsToLayers:
         canvas_h, canvas_w = parts["frame_size"]
 
         sorted_tags = sorted(tag2pinfo.keys(),
-                             key=lambda t: tag2pinfo[t].get("depth_median", 1), reverse=True)
+                             key=lambda t: _depth_sort_key(tag2pinfo[t]), reverse=True)
 
         items = []
         for z_index, tag in enumerate(sorted_tags):
